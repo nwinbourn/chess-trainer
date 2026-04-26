@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>♞ Noah's Chess Trainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f151a;
+  --surface: #161f28;
+  --surface2: #1c2838;
+  --surface3: #223040;
+  --border: #253545;
+  --border2: #2e4055;
+  --accent: #5b8fa8;
+  --accent-light: #7aafc8;
+  --accent-dim: rgba(91,143,168,0.12);
+  --text: #c8d8e8;
+  --text-muted: #5f7d95;
+  --text-dim: #3a5570;
+  --white: #e8f0f8;
+  --complete: #3a6b50;
+  --serif: 'Playfair Display', Georgia, serif;
+  --sans: 'Inter', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-weight: 300;
+  height: 100vh;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ── LAYOUT ── */
+#app { display: grid; grid-template-columns: 256px 1fr; height: 100vh; overflow: hidden; }
+
+/* ── SIDEBAR ── */
+#sidebar {
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto; overflow-x: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Subtle knight watermark */
+#sidebar::after {
+  content: '♞';
+  position: absolute;
+  bottom: -24px; right: -16px;
+  font-size: 220px;
+  color: rgba(91,143,168,0.045);
+  pointer-events: none;
+  line-height: 1;
+  user-select: none;
+}
+
+.app-logo {
+  padding: 18px 18px 14px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0; position: relative; z-index: 1;
+}
+
+.knight-icon { font-size: 24px; line-height: 1; filter: drop-shadow(0 0 6px rgba(91,143,168,0.5)); }
+.app-name { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--white); letter-spacing: 0.01em; }
+.app-sub { font-family: var(--mono); font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
+
+/* Calendar */
+#calendar-widget { padding: 14px 14px 10px; position: relative; z-index: 1; }
+
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.cal-title { font-family: var(--serif); font-size: 13px; color: var(--white); font-weight: 600; }
+
+.cal-nav-btn {
+  background: none; border: 1px solid var(--border); color: var(--text-muted);
+  width: 22px; height: 22px; border-radius: 3px; cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+}
+.cal-nav-btn:hover { border-color: var(--accent); color: var(--accent-light); }
+
+.cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 3px; }
+.cal-weekday { text-align: center; font-family: var(--mono); font-size: 8px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 0; }
+
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+
+.cal-day {
+  aspect-ratio: 1; border-radius: 3px; display: flex; align-items: center; justify-content: center;
+  font-size: 10px; cursor: pointer; transition: all 0.12s; border: 1px solid transparent;
+  font-family: var(--mono); color: var(--text-muted); position: relative;
+}
+.cal-day:hover { border-color: var(--border2); color: var(--text); }
+.cal-day.empty { cursor: default; pointer-events: none; }
+.cal-day.today { border-color: var(--accent); color: var(--accent-light); }
+.cal-day.selected { background: var(--accent-dim); border-color: var(--accent); color: var(--accent-light); }
+.cal-day.complete { background: var(--complete); color: #b8e8cc; border-color: transparent; }
+.cal-day.complete.selected { box-shadow: 0 0 0 2px var(--accent-light); }
+.cal-day.has-data::after {
+  content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+  width: 3px; height: 3px; border-radius: 50%; background: var(--text-dim);
+}
+.cal-day.complete::after { display: none; }
+
+.today-btn {
+  width: 100%; margin-top: 8px; background: none; border: 1px solid var(--border);
+  color: var(--text-muted); font-family: var(--mono); font-size: 8px; text-transform: uppercase;
+  letter-spacing: 0.1em; padding: 5px; border-radius: 3px; cursor: pointer; transition: all 0.15s;
+}
+.today-btn:hover { border-color: var(--accent); color: var(--accent-light); }
+
+/* ── MAIN ── */
+#main-content { display: grid; grid-template-rows: auto 1fr; overflow: hidden; min-width: 0; }
+
+/* ── GRAPH PANEL ── */
+#graph-panel { border-bottom: 1px solid var(--border); padding: 14px 22px 10px; background: var(--bg); flex-shrink: 0; }
+
+.graph-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+
+.graph-label { font-family: var(--mono); font-size: 8px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-dim); margin-bottom: 2px; }
+.graph-current-rating { font-family: var(--serif); font-size: 28px; color: var(--accent-light); line-height: 1; }
+.graph-current-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+.edit-ratings-btn {
+  background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent-light);
+  font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 5px 12px; border-radius: 3px; cursor: pointer; transition: all 0.15s; white-space: nowrap; margin-top: 4px;
+}
+.edit-ratings-btn:hover { background: rgba(91,143,168,0.2); }
+
+/* Monthly rating editor */
+#monthly-editor {
+  display: none;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+#monthly-editor.open { display: block; }
+
+.monthly-editor-title {
+  font-family: var(--mono); font-size: 8px; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--text-muted); margin-bottom: 10px;
+}
+
+.monthly-rows { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+
+.monthly-row { display: flex; flex-direction: column; gap: 4px; }
+
+.monthly-month-label {
+  font-family: var(--mono); font-size: 8px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.08em; text-align: center;
+}
+
+.monthly-input {
+  width: 72px; background: var(--surface); border: 1px solid var(--border2); color: var(--white);
+  font-family: var(--mono); font-size: 12px; padding: 5px 6px; border-radius: 3px;
+  outline: none; text-align: center; transition: border-color 0.15s;
+}
+.monthly-input:focus { border-color: var(--accent); }
+.monthly-input::placeholder { color: var(--text-dim); font-size: 10px; }
+
+.close-editor-btn {
+  background: none; border: none; color: var(--text-muted); font-size: 14px;
+  cursor: pointer; padding: 2px 5px; transition: color 0.15s; align-self: center; margin-left: auto;
+}
+.close-editor-btn:hover { color: var(--text); }
+
+#graph-container { position: relative; height: 96px; }
+#rating-graph { width: 100%; height: 100%; display: block; }
+
+/* ── WORKSPACE ── */
+#workspace { overflow-y: auto; display: flex; flex-direction: column; min-height: 0; }
+
+.workspace-header {
+  padding: 14px 22px 0;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  flex-shrink: 0; gap: 12px;
+}
+
+.selected-day-label { font-family: var(--serif); font-size: 20px; color: var(--white); line-height: 1.2; }
+.selected-day-sub { font-family: var(--mono); font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 3px; }
+
+.tab-bar {
+  display: flex; gap: 2px; background: var(--surface); padding: 3px;
+  border-radius: 5px; border: 1px solid var(--border); flex-shrink: 0;
+}
+.tab-btn {
+  background: none; border: none; color: var(--text-muted); font-family: var(--mono);
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em; padding: 5px 12px;
+  border-radius: 3px; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.tab-btn.active { background: var(--surface3); color: var(--accent-light); }
+
+.tab-content { display: none; padding: 16px 22px 24px; flex: 1; }
+.tab-content.active { display: block; }
+
+/* ── CHECKLIST ── */
+.completion-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--mono); font-size: 8px; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 5px;
+}
+.completion-bar { height: 2px; background: var(--border); border-radius: 1px; margin-bottom: 12px; overflow: hidden; }
+.completion-fill { height: 100%; background: var(--complete); border-radius: 1px; transition: width 0.3s ease; }
+
+#task-list { display: flex; flex-direction: column; gap: 3px; margin-bottom: 18px; }
+
+.task-item {
+  display: flex; align-items: flex-start; gap: 10px; padding: 9px 12px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+  cursor: pointer; transition: all 0.12s; user-select: none;
+}
+.task-item:hover { border-color: var(--border2); }
+.task-item.done { opacity: 0.45; }
+.task-item.done .task-text { text-decoration: line-through; color: var(--text-muted); }
+
+.task-checkbox {
+  width: 15px; height: 15px; border: 1.5px solid var(--border2); border-radius: 3px;
+  flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: all 0.12s;
+}
+.task-item.done .task-checkbox { background: var(--complete); border-color: var(--complete); }
+.task-checkbox::after {
+  content: ''; width: 4px; height: 7px; border-right: 1.5px solid white; border-bottom: 1.5px solid white;
+  transform: rotate(45deg) translate(-1px, -1px); opacity: 0; transition: opacity 0.12s;
+}
+.task-item.done .task-checkbox::after { opacity: 1; }
+
+.task-text { font-size: 12px; color: var(--text); line-height: 1.4; }
+.task-note { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+.notes-label { font-family: var(--mono); font-size: 8px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 7px; }
+.notes-textarea {
+  width: 100%; min-height: 85px; background: var(--surface); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--sans); font-size: 12px; font-weight: 300; line-height: 1.65;
+  padding: 10px 12px; border-radius: 4px; resize: vertical; outline: none; transition: border-color 0.15s;
+}
+.notes-textarea:focus { border-color: var(--accent); }
+.notes-textarea::placeholder { color: var(--text-dim); }
+
+/* ── REVIEWS ── */
+.reviews-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.reviews-count { font-family: var(--mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; }
+
+.add-review-btn {
+  background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent-light);
+  font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em;
+  padding: 5px 12px; border-radius: 3px; cursor: pointer; transition: all 0.15s;
+}
+.add-review-btn:hover { background: rgba(91,143,168,0.2); }
+
+.review-card { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; margin-bottom: 10px; overflow: hidden; }
+
+.review-card-header {
+  display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+  cursor: pointer; border-bottom: 1px solid var(--border); user-select: none;
+}
+
+.review-num { font-family: var(--mono); font-size: 8px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; flex-shrink: 0; }
+.result-badge { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 2px; flex-shrink: 0; }
+.result-W { background: rgba(58,107,80,0.22); color: #7ac898; }
+.result-L { background: rgba(122,58,58,0.22); color: #c07070; }
+.result-D { background: var(--accent-dim); color: var(--accent-light); }
+.result-none { background: var(--border); color: var(--text-muted); }
+
+.review-meta { font-size: 10px; color: var(--text-muted); flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.review-collapse-btn { background: none; border: none; color: var(--text-dim); font-size: 11px; cursor: pointer; padding: 2px 4px; transition: color 0.15s; flex-shrink: 0; }
+.review-collapse-btn:hover { color: var(--text); }
+.delete-review-btn { background: none; border: none; color: var(--text-dim); font-size: 10px; cursor: pointer; padding: 2px 4px; transition: color 0.15s; font-family: var(--mono); flex-shrink: 0; }
+.delete-review-btn:hover { color: #c07070; }
+
+.review-body { padding: 12px 14px; }
+.review-body.collapsed { display: none; }
+
+.review-stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.review-field { display: flex; flex-direction: column; gap: 5px; }
+.review-field-full { margin-bottom: 10px; }
+.review-field-label { font-family: var(--mono); font-size: 8px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
+
+.result-selector { display: flex; gap: 3px; }
+.result-btn {
+  flex: 1; padding: 4px; border: 1px solid var(--border); background: none; color: var(--text-muted);
+  font-family: var(--mono); font-size: 10px; border-radius: 3px; cursor: pointer; transition: all 0.12s; text-align: center;
+}
+.result-btn:hover { border-color: var(--border2); color: var(--text); }
+.result-btn.sel-W { background: rgba(58,107,80,0.2); border-color: #3a6b50; color: #7ac898; }
+.result-btn.sel-L { background: rgba(122,58,58,0.2); border-color: #7a3a3a; color: #c07070; }
+.result-btn.sel-D { background: var(--accent-dim); border-color: var(--accent); color: var(--accent-light); }
+
+.review-input {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--white);
+  font-family: var(--mono); font-size: 12px; padding: 5px 8px; border-radius: 3px;
+  outline: none; width: 100%; transition: border-color 0.15s;
+}
+.review-input:focus { border-color: var(--accent); }
+.review-input::placeholder { color: var(--text-dim); }
+
+.review-textarea {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--sans); font-size: 12px; font-weight: 300; line-height: 1.6; padding: 8px 10px;
+  border-radius: 3px; resize: vertical; outline: none; min-height: 65px; transition: border-color 0.15s;
+}
+.review-textarea:focus { border-color: var(--accent); }
+.review-textarea::placeholder { color: var(--text-dim); }
+.pgn-textarea { font-family: var(--mono); font-size: 10px; min-height: 72px; }
+
+.no-reviews { text-align: center; padding: 36px; font-family: var(--mono); font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; line-height: 2; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="app-logo">
+      <span class="knight-icon">♞</span>
+      <div>
+        <div class="app-name">Noah</div>
+        <div class="app-sub">Chess Tracker</div>
+      </div>
+    </div>
+    <div id="calendar-widget">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="prev-month">‹</button>
+        <span class="cal-title" id="cal-title"></span>
+        <button class="cal-nav-btn" id="next-month">›</button>
+      </div>
+      <div class="cal-weekdays">
+        <div class="cal-weekday">S</div><div class="cal-weekday">M</div>
+        <div class="cal-weekday">T</div><div class="cal-weekday">W</div>
+        <div class="cal-weekday">T</div><div class="cal-weekday">F</div>
+        <div class="cal-weekday">S</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <button class="today-btn" id="today-btn">↩ Jump to Today</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main id="main-content">
+
+    <!-- GRAPH -->
+    <div id="graph-panel">
+      <div class="graph-top">
+        <div>
+          <div class="graph-label">Blitz Rating — Monthly Averages</div>
+          <div class="graph-current-rating" id="graph-current-rating">—</div>
+          <div class="graph-current-sub" id="graph-current-sub">No ratings logged yet</div>
+        </div>
+        <button class="edit-ratings-btn" id="edit-ratings-btn">✎ Edit Monthly Ratings</button>
+      </div>
+
+      <!-- Monthly editor -->
+      <div id="monthly-editor">
+        <div class="monthly-editor-title">Enter average rating per month</div>
+        <div class="monthly-rows" id="monthly-rows">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <div id="graph-container">
+        <svg id="rating-graph" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#5b8fa8" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="#5b8fa8" stop-opacity="0.0"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    </div>
+
+    <!-- WORKSPACE -->
+    <div id="workspace">
+      <div class="workspace-header">
+        <div>
+          <div class="selected-day-label" id="selected-day-label"></div>
+          <div class="selected-day-sub" id="selected-day-sub"></div>
+        </div>
+        <div class="tab-bar">
+          <button class="tab-btn active" data-tab="checklist">♟ Checklist</button>
+          <button class="tab-btn" data-tab="reviews">♜ Game Reviews</button>
+        </div>
+      </div>
+
+      <!-- CHECKLIST TAB -->
+      <div id="tab-checklist" class="tab-content active">
+        <div class="completion-row">
+          <span>Daily Progress</span>
+          <span id="completion-count">0 / 0</span>
+        </div>
+        <div class="completion-bar">
+          <div class="completion-fill" id="completion-fill" style="width:0%"></div>
+        </div>
+        <div id="task-list"></div>
+        <div>
+          <div class="notes-label">♟ Daily Notes</div>
+          <textarea class="notes-textarea" id="daily-notes" placeholder="Thoughts, patterns noticed, what clicked today, goals for tomorrow..."></textarea>
+        </div>
+      </div>
+
+      <!-- REVIEWS TAB -->
+      <div id="tab-reviews" class="tab-content">
+        <div class="reviews-top">
+          <div class="reviews-count" id="reviews-count">0 Reviews</div>
+          <button class="add-review-btn" id="add-review-btn">+ Add Game Review</button>
+        </div>
+        <div id="reviews-list"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// WEEKLY TASKS
+// ═══════════════════════════════════════
+
+const WEEKLY_TASKS = {
+  0: [
+    { id: 'sun_puzzles', text: 'Puzzles (10 min)', note: 'No games today — rest day' },
+    { id: 'sun_video', text: 'Watch targeted video on this week\'s weakness', note: 'Bartholomew fundamentals or specific Gotham topic' },
+  ],
+  1: [
+    { id: 'mon_puzzles', text: 'Puzzles (10 min)', note: 'Calculate the full line before clicking' },
+    { id: 'mon_vision', text: 'Board Vision — Chess Tempo (5 min)', note: 'Square recognition trainer' },
+    { id: 'mon_opening', text: 'Ruy Lopez study — interactive drills only', note: 'Skip videos, do the move-finding drills' },
+    { id: 'mon_games', text: '1–2 games + full Platinum review', note: 'Find the turning point, not just the final blunder' },
+  ],
+  2: [
+    { id: 'tue_puzzles', text: 'Puzzles (10 min)', note: 'Calculate before clicking' },
+    { id: 'tue_vision', text: 'Board Vision — Chess Tempo (5 min)', note: '' },
+    { id: 'tue_endgame', text: 'Endgame drill — Lucena position', note: 'Repeat until it feels automatic' },
+    { id: 'tue_games', text: '1–2 games + review', note: '' },
+  ],
+  3: [
+    { id: 'wed_puzzles', text: 'Puzzles (10 min)', note: '' },
+    { id: 'wed_vision', text: 'Board Vision — Chess Tempo (5 min)', note: '' },
+    { id: 'wed_opening', text: 'Sicilian — best variation drills', note: 'Check Platinum opening report to confirm your best line' },
+    { id: 'wed_review', text: 'Deep review of 1 loss — full analysis', note: 'Ask: why did I think my move was good?' },
+  ],
+  4: [
+    { id: 'thu_puzzles', text: 'Puzzles (10 min)', note: '' },
+    { id: 'thu_vision', text: 'Board Vision — Chess Tempo (5 min)', note: '' },
+    { id: 'thu_endgame', text: 'Endgame — K+P opposition + triangulation', note: '' },
+    { id: 'thu_games', text: '1–2 games + review', note: '' },
+  ],
+  5: [
+    { id: 'fri_puzzles', text: 'Puzzles (10 min)', note: '' },
+    { id: 'fri_vision', text: 'Board Vision — Chess Tempo (5 min)', note: '' },
+    { id: 'fri_opening', text: 'Petrov / Stafford trap lines', note: '' },
+    { id: 'fri_games', text: '2–3 games + full Platinum review', note: '' },
+  ],
+  6: [
+    { id: 'sat_puzzles', text: 'Longer puzzle session (15 min)', note: 'Take your time on each one' },
+    { id: 'sat_vision', text: 'Board Vision — Chess Tempo (10 min)', note: '' },
+    { id: 'sat_games', text: '3–4 games, unhurried review', note: 'Quality over volume — no tilting' },
+  ],
+};
+
+const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+
+const today = new Date(); today.setHours(0,0,0,0);
+let selectedDate = new Date(today);
+let calMonth = today.getMonth();
+let calYear = today.getFullYear();
+let activeTab = 'checklist';
+
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+
+function toDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function toMonthKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+}
+
+function getData() {
+  try { return JSON.parse(localStorage.getItem('chess_tracker_v2') || '{}'); }
+  catch { return {}; }
+}
+
+function saveData(data) { localStorage.setItem('chess_tracker_v2', JSON.stringify(data)); }
+
+function getDayData(ds) {
+  const d = getData()[ds];
+  return d ? d : { tasks:{}, notes:'', reviews:[] };
+}
+
+function saveDayData(ds, dd) {
+  const data = getData();
+  data[ds] = dd;
+  saveData(data);
+}
+
+function getMonthlyRatings() {
+  try { return JSON.parse(localStorage.getItem('chess_monthly_ratings') || '{}'); }
+  catch { return {}; }
+}
+
+function saveMonthlyRatings(r) { localStorage.setItem('chess_monthly_ratings', JSON.stringify(r)); }
+
+function isDayComplete(ds, dow) {
+  const dd = getDayData(ds);
+  const tasks = WEEKLY_TASKS[dow] || [];
+  return tasks.length > 0 && tasks.every(t => dd.tasks[t.id]);
+}
+
+function dayHasData(ds) {
+  const dd = getDayData(ds);
+  return dd.notes !== '' || Object.values(dd.tasks).some(Boolean) || dd.reviews.length > 0;
+}
+
+// ═══════════════════════════════════════
+// MONTHLY RATING EDITOR
+// ═══════════════════════════════════════
+
+function getLast5Months() {
+  const months = [];
+  const d = new Date(today);
+  for (let i = 4; i >= 0; i--) {
+    const t = new Date(d.getFullYear(), d.getMonth() - i, 1);
+    months.push({ key: toMonthKey(t), label: `${MONTH_SHORT[t.getMonth()]} ${t.getFullYear()}` });
+  }
+  return months;
+}
+
+function buildMonthlyEditor() {
+  const months = getLast5Months();
+  const ratings = getMonthlyRatings();
+  const container = document.getElementById('monthly-rows');
+  container.innerHTML = '';
+
+  months.forEach(m => {
+    const col = document.createElement('div');
+    col.className = 'monthly-row';
+    col.innerHTML = `
+      <div class="monthly-month-label">${m.label}</div>
+      <input class="monthly-input" type="number" placeholder="—" min="400" max="3000" value="${ratings[m.key] || ''}" data-key="${m.key}">`;
+    col.querySelector('input').addEventListener('change', e => {
+      const val = parseInt(e.target.value);
+      const r = getMonthlyRatings();
+      if (!isNaN(val) && val >= 400 && val <= 3000) {
+        r[m.key] = val;
+      } else {
+        delete r[m.key];
+      }
+      saveMonthlyRatings(r);
+      renderGraph();
+    });
+    container.appendChild(col);
+  });
+
+  // Close button
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'close-editor-btn';
+  closeBtn.textContent = '✕';
+  closeBtn.addEventListener('click', () => {
+    document.getElementById('monthly-editor').classList.remove('open');
+  });
+  container.appendChild(closeBtn);
+}
+
+// ═══════════════════════════════════════
+// CALENDAR
+// ═══════════════════════════════════════
+
+function renderCalendar() {
+  document.getElementById('cal-title').textContent = `${MONTH_NAMES[calMonth]} ${calYear}`;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const selStr = toDateStr(selectedDate);
+
+  for (let i = 0; i < firstDay; i++) {
+    const e = document.createElement('div');
+    e.className = 'cal-day empty';
+    grid.appendChild(e);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(calYear, calMonth, d);
+    const ds = toDateStr(date);
+    const dow = date.getDay();
+    const cell = document.createElement('div');
+    cell.className = 'cal-day';
+    cell.textContent = d;
+
+    if (isDayComplete(ds, dow)) cell.classList.add('complete');
+    else if (dayHasData(ds)) cell.classList.add('has-data');
+    if (date.getTime() === today.getTime()) cell.classList.add('today');
+    if (ds === selStr) cell.classList.add('selected');
+
+    cell.addEventListener('click', () => {
+      selectedDate = date;
+      renderCalendar();
+      renderWorkspace();
+    });
+    grid.appendChild(cell);
+  }
+}
+
+// ═══════════════════════════════════════
+// GRAPH
+// ═══════════════════════════════════════
+
+function renderGraph() {
+  const svg = document.getElementById('rating-graph');
+  const container = document.getElementById('graph-container');
+  const ratings = getMonthlyRatings();
+  const months = getLast5Months();
+
+  const entries = months
+    .filter(m => ratings[m.key] !== undefined)
+    .map(m => ({ label: m.label, rating: ratings[m.key] }));
+
+  // Header display — show most recent logged rating
+  const rDisplay = document.getElementById('graph-current-rating');
+  const rSub = document.getElementById('graph-current-sub');
+
+  if (entries.length > 0) {
+    const latest = entries[entries.length - 1];
+    rDisplay.textContent = latest.rating;
+    rSub.textContent = `Average — ${latest.label}`;
+  } else {
+    rDisplay.textContent = '—';
+    rSub.textContent = 'Click "Edit Monthly Ratings" to get started';
+  }
+
+  if (entries.length < 2) {
+    svg.innerHTML = `<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5b8fa8" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#5b8fa8" stop-opacity="0.0"/>
+    </linearGradient></defs>
+    <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle"
+      font-family="JetBrains Mono,monospace" font-size="10" fill="#3a5570">
+      ${entries.length === 0 ? 'Enter monthly averages to see your progress' : 'Enter at least 2 months to see the graph'}
+    </text>`;
+    return;
+  }
+
+  const W = container.clientWidth || 700;
+  const H = 96;
+  const pL = 44, pR = 12, pT = 8, pB = 22;
+  const pW = W - pL - pR, pH = H - pT - pB;
+
+  const rvals = entries.map(e => e.rating);
+  const minR = Math.min(...rvals) - 25;
+  const maxR = Math.max(...rvals) + 25;
+
+  const pts = entries.map((e, i) => ({
+    x: pL + (i / (entries.length - 1)) * pW,
+    y: pT + (1 - (e.rating - minR) / (maxR - minR)) * pH,
+    rating: e.rating,
+    label: e.label
+  }));
+
+  // Smooth curve
+  function curvePath(points) {
+    let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[Math.max(0, i-1)];
+      const p1 = points[i];
+      const p2 = points[i+1];
+      const p3 = points[Math.min(points.length-1, i+2)];
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+      d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+    }
+    return d;
+  }
+
+  const linePath = curvePath(pts);
+  const f = pts[0], l = pts[pts.length-1];
+  const areaPath = `${linePath} L ${l.x.toFixed(1)} ${(pT+pH).toFixed(1)} L ${f.x.toFixed(1)} ${(pT+pH).toFixed(1)} Z`;
+
+  // Y-axis
+  let yLabels = '', gridLines = '';
+  const yTicks = 4;
+  for (let i = 0; i <= yTicks; i++) {
+    const val = Math.round(minR + (maxR - minR) * i / yTicks);
+    const y = pT + (1 - (val - minR) / (maxR - minR)) * pH;
+    gridLines += `<line x1="${pL}" y1="${y.toFixed(1)}" x2="${(pL+pW).toFixed(1)}" y2="${y.toFixed(1)}" stroke="#253545" stroke-width="1"/>`;
+    yLabels += `<text x="${pL-5}" y="${y.toFixed(0)}" text-anchor="end" dominant-baseline="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#3a5570">${val}</text>`;
+  }
+
+  // X-axis labels (month names)
+  let xLabels = '';
+  pts.forEach((p, i) => {
+    const anchor = i === 0 ? 'start' : i === pts.length-1 ? 'end' : 'middle';
+    xLabels += `<text x="${p.x.toFixed(0)}" y="${H-3}" text-anchor="${anchor}" dominant-baseline="auto" font-family="JetBrains Mono,monospace" font-size="9" fill="#3a5570">${entries[i].label}</text>`;
+  });
+
+  // Dots with rating labels
+  let dots = pts.map((p, i) => {
+    const isFirst = i === 0, isLast = i === pts.length - 1;
+    const labelAnchor = isFirst ? 'start' : isLast ? 'end' : 'middle';
+    const labelY = p.y - 8;
+    return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="#7aafc8"/>
+    <text x="${p.x.toFixed(0)}" y="${labelY.toFixed(0)}" text-anchor="${labelAnchor}" font-family="JetBrains Mono,monospace" font-size="8" fill="#7aafc8">${p.rating}</text>`;
+  }).join('');
+
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#5b8fa8" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="#5b8fa8" stop-opacity="0.0"/>
+      </linearGradient>
+    </defs>
+    ${gridLines}
+    <path d="${areaPath}" fill="url(#areaGrad)"/>
+    <path d="${linePath}" fill="none" stroke="#5b8fa8" stroke-width="1.5" stroke-linejoin="round"/>
+    ${dots}
+    ${yLabels}
+    ${xLabels}`;
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+}
+
+// ═══════════════════════════════════════
+// WORKSPACE
+// ═══════════════════════════════════════
+
+function renderWorkspace() {
+  const ds = toDateStr(selectedDate);
+  const dow = selectedDate.getDay();
+  const dd = getDayData(ds);
+
+  document.getElementById('selected-day-label').textContent =
+    `${DAY_NAMES[dow]}, ${MONTH_NAMES[selectedDate.getMonth()]} ${selectedDate.getDate()}`;
+  const isToday = ds === toDateStr(today);
+  document.getElementById('selected-day-sub').textContent =
+    isToday ? 'Today' : selectedDate > today ? 'Upcoming' : 'Past Day';
+
+  renderChecklist(ds, dow, dd);
+  renderReviews(ds, dd);
+  document.getElementById('daily-notes').value = dd.notes || '';
+}
+
+function renderChecklist(ds, dow, dd) {
+  const tasks = WEEKLY_TASKS[dow] || [];
+  const done = tasks.filter(t => dd.tasks[t.id]).length;
+  const pct = tasks.length > 0 ? done / tasks.length * 100 : 0;
+
+  document.getElementById('completion-fill').style.width = pct + '%';
+  document.getElementById('completion-count').textContent = `${done} / ${tasks.length}`;
+
+  const list = document.getElementById('task-list');
+  list.innerHTML = '';
+
+  if (!tasks.length) {
+    list.innerHTML = '<div class="no-reviews" style="padding:16px 0">No tasks for this day</div>';
+    return;
+  }
+
+  tasks.forEach(task => {
+    const isDone = !!dd.tasks[task.id];
+    const item = document.createElement('div');
+    item.className = `task-item${isDone ? ' done' : ''}`;
+    item.innerHTML = `
+      <div class="task-checkbox"></div>
+      <div>
+        <div class="task-text">${task.text}</div>
+        ${task.note ? `<div class="task-note">${task.note}</div>` : ''}
+      </div>`;
+    item.addEventListener('click', () => {
+      const current = getDayData(ds);
+      current.tasks[task.id] = !current.tasks[task.id];
+      saveDayData(ds, current);
+      renderChecklist(ds, dow, getDayData(ds));
+      renderCalendar();
+    });
+    list.appendChild(item);
+  });
+}
+
+function renderReviews(ds, dd) {
+  const reviews = dd.reviews || [];
+  document.getElementById('reviews-count').textContent = `${reviews.length} ${reviews.length === 1 ? 'Review' : 'Reviews'}`;
+  const list = document.getElementById('reviews-list');
+  list.innerHTML = '';
+
+  if (!reviews.length) {
+    list.innerHTML = '<div class="no-reviews">No game reviews for this day.<br>Add one using the button above.</div>';
+    return;
+  }
+
+  reviews.forEach((rev, idx) => {
+    const rc = rev.result ? `result-${rev.result}` : 'result-none';
+    const rt = rev.result || '—';
+    const meta = [rev.accuracy ? `${rev.accuracy}% acc` : null, rev.perf ? `${rev.perf} perf` : null].filter(Boolean).join(' · ') || 'No stats';
+
+    const card = document.createElement('div');
+    card.className = 'review-card';
+    card.innerHTML = `
+      <div class="review-card-header" onclick="toggleReview(this)">
+        <span class="review-num">Game ${idx+1}</span>
+        <span class="result-badge ${rc}">${rt}</span>
+        <span class="review-meta">${meta}</span>
+        <button class="review-collapse-btn">▾</button>
+        <button class="delete-review-btn" onclick="deleteReview(event,'${ds}',${idx})">✕</button>
+      </div>
+      <div class="review-body">
+        <div class="review-stats-row">
+          <div class="review-field">
+            <div class="review-field-label">Result</div>
+            <div class="result-selector">
+              <button class="result-btn${rev.result==='W'?' sel-W':''}" onclick="setResult(event,'${ds}',${idx},'W')">W</button>
+              <button class="result-btn${rev.result==='L'?' sel-L':''}" onclick="setResult(event,'${ds}',${idx},'L')">L</button>
+              <button class="result-btn${rev.result==='D'?' sel-D':''}" onclick="setResult(event,'${ds}',${idx},'D')">D</button>
+            </div>
+          </div>
+          <div class="review-field">
+            <div class="review-field-label">Accuracy %</div>
+            <input class="review-input" type="number" placeholder="87" min="0" max="100" value="${rev.accuracy||''}"
+              onchange="saveReviewField('${ds}',${idx},'accuracy',this.value)">
+          </div>
+          <div class="review-field">
+            <div class="review-field-label">Performance Rating</div>
+            <input class="review-input" type="number" placeholder="1220" min="400" max="3000" value="${rev.perf||''}"
+              onchange="saveReviewField('${ds}',${idx},'perf',this.value)">
+          </div>
+        </div>
+        <div class="review-field review-field-full">
+          <div class="review-field-label">PGN / Notation</div>
+          <textarea class="review-textarea pgn-textarea" placeholder="Paste PGN or notation here..."
+            onchange="saveReviewField('${ds}',${idx},'pgn',this.value)">${rev.pgn||''}</textarea>
+        </div>
+        <div class="review-field">
+          <div class="review-field-label">Notes — What I Learned / Missed</div>
+          <textarea class="review-textarea" placeholder="Key moments, mistakes, patterns noticed, what I'd play differently..."
+            onchange="saveReviewField('${ds}',${idx},'notes',this.value)">${rev.notes||''}</textarea>
+        </div>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+// ═══════════════════════════════════════
+// REVIEW ACTIONS
+// ═══════════════════════════════════════
+
+function toggleReview(header) {
+  const body = header.nextElementSibling;
+  const btn = header.querySelector('.review-collapse-btn');
+  body.classList.toggle('collapsed');
+  btn.textContent = body.classList.contains('collapsed') ? '▸' : '▾';
+}
+
+function setResult(e, ds, idx, result) {
+  e.stopPropagation();
+  const dd = getDayData(ds);
+  dd.reviews[idx].result = dd.reviews[idx].result === result ? null : result;
+  saveDayData(ds, dd);
+  renderReviews(ds, dd);
+}
+
+function saveReviewField(ds, idx, field, value) {
+  const dd = getDayData(ds);
+  dd.reviews[idx][field] = value;
+  saveDayData(ds, dd);
+}
+
+function deleteReview(e, ds, idx) {
+  e.stopPropagation();
+  if (!confirm('Delete this game review?')) return;
+  const dd = getDayData(ds);
+  dd.reviews.splice(idx, 1);
+  saveDayData(ds, dd);
+  renderReviews(ds, dd);
+}
+
+// ═══════════════════════════════════════
+// EVENTS
+// ═══════════════════════════════════════
+
+document.getElementById('prev-month').addEventListener('click', () => {
+  calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+});
+
+document.getElementById('next-month').addEventListener('click', () => {
+  calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+});
+
+document.getElementById('today-btn').addEventListener('click', () => {
+  selectedDate = new Date(today);
+  calMonth = today.getMonth(); calYear = today.getFullYear();
+  renderCalendar(); renderWorkspace();
+});
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    activeTab = btn.dataset.tab;
+    document.getElementById(`tab-${activeTab}`).classList.add('active');
+  });
+});
+
+document.getElementById('edit-ratings-btn').addEventListener('click', () => {
+  const editor = document.getElementById('monthly-editor');
+  if (editor.classList.contains('open')) {
+    editor.classList.remove('open');
+  } else {
+    buildMonthlyEditor();
+    editor.classList.add('open');
+  }
+});
+
+let notesTimer;
+document.getElementById('daily-notes').addEventListener('input', e => {
+  clearTimeout(notesTimer);
+  notesTimer = setTimeout(() => {
+    const ds = toDateStr(selectedDate);
+    const dd = getDayData(ds);
+    dd.notes = e.target.value;
+    saveDayData(ds, dd);
+  }, 500);
+});
+
+document.getElementById('add-review-btn').addEventListener('click', () => {
+  const ds = toDateStr(selectedDate);
+  const dd = getDayData(ds);
+  dd.reviews.push({ pgn:'', result:null, accuracy:'', perf:'', notes:'' });
+  saveDayData(ds, dd);
+  renderReviews(ds, dd);
+  if (activeTab !== 'reviews') document.querySelector('[data-tab="reviews"]').click();
+});
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(renderGraph, 80);
+});
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+
+renderCalendar();
+renderWorkspace();
+renderGraph();
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import { state, today, toDateStr, getDayData, saveDayData, getData, getMonthlyRatings,
-         getAppName, saveAppName, getChessUsername, saveChessUsername } from './data.js';
+         getAppName, saveAppName, getChessUsername, saveChessUsername,
+         getRatingMode, saveRatingMode } from './data.js';
 import { clearApiCache } from './chess-api.js';
 import { renderCalendar } from './calendar.js';
 import { renderGraph } from './graph.js';
@@ -8,8 +9,9 @@ import { initStorage, reconnect, createNewFile, openExistingFile, readFile, getF
 
 // ── LOGO: editable name + Chess.com username ──
 
-const appNameEl      = document.getElementById('app-name');
+const appNameEl       = document.getElementById('app-name');
 const chessUsernameEl = document.getElementById('chess-username');
+const ratingModeEl    = document.getElementById('rating-mode');
 
 function preventNewline(e) {
   if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
@@ -29,6 +31,11 @@ chessUsernameEl.addEventListener('blur', () => {
   saveChessUsername(val);
   clearApiCache();   // invalidate cached ratings for the old username
   renderGraph();     // re-fetch with new username
+});
+
+ratingModeEl.addEventListener('change', () => {
+  saveRatingMode(ratingModeEl.value);
+  renderGraph();     // no cache clear needed — each mode has its own cache key
 });
 
 // ── CALENDAR NAVIGATION ──
@@ -224,9 +231,10 @@ async function init() {
     }
   }
 
-  // Populate editable logo fields from storage
-  appNameEl.textContent      = getAppName();
+  // Populate editable logo fields and rating mode from storage
+  appNameEl.textContent       = getAppName();
   chessUsernameEl.textContent = getChessUsername();
+  ratingModeEl.value          = getRatingMode();
 
   renderCalendar();
   renderWorkspace();

@@ -4,7 +4,7 @@ function getUsername() {
   return localStorage.getItem('chess_username') || 'Monkes_Gambit';
 }
 
-/** Clear all cached API results (call when the username changes). */
+/** Clear all cached API results (call when the username or mode changes). */
 export function clearApiCache() {
   const remove = [];
   for (let i = 0; i < localStorage.length; i++) {
@@ -35,11 +35,11 @@ function cacheSet(key, value) {
 // ── Public API ───────────────────────────────────────────────────────────────
 
 /**
- * Returns the current blitz rating (number) or null if unavailable.
- * Cached for 5 minutes.
+ * Returns the current rating for the given time class ('blitz'|'bullet'|'rapid'),
+ * or null if unavailable. Cached for 5 minutes.
  */
-export async function fetchCurrentBlitzRating() {
-  const KEY = 'chess_api_stats';
+export async function fetchCurrentRating(timeClass = 'blitz') {
+  const KEY = `chess_api_stats_${timeClass}`;
   const TTL = 5 * 60 * 1000;
 
   const cached = cacheGet(KEY, TTL);
@@ -49,19 +49,20 @@ export async function fetchCurrentBlitzRating() {
   if (!res.ok) throw new Error(`Stats fetch failed: ${res.status}`);
   const data = await res.json();
 
-  const rating = data.chess_blitz?.last?.rating ?? null;
+  // Chess.com keys: chess_blitz, chess_bullet, chess_rapid
+  const rating = data[`chess_${timeClass}`]?.last?.rating ?? null;
   cacheSet(KEY, rating);
   return rating;
 }
 
 /**
- * Returns the average blitz rating for the given year/month (1-indexed),
- * or null if no blitz games were played that month.
+ * Returns the average rating for the given time class and year/month (1-indexed),
+ * or null if no games were played that month.
  * Cached 1 hour for the current month, 24 hours for past months.
  */
-export async function fetchMonthAvgRating(year, month) {
+export async function fetchMonthAvgRating(year, month, timeClass = 'blitz') {
   const monthStr = String(month).padStart(2, '0');
-  const KEY = `chess_api_month_${year}-${monthStr}`;
+  const KEY = `chess_api_month_${year}-${monthStr}_${timeClass}`;
 
   const now = new Date();
   const isCurrent = year === now.getFullYear() && month === now.getMonth() + 1;
@@ -82,7 +83,7 @@ export async function fetchMonthAvgRating(year, month) {
   const lc = username.toLowerCase();
 
   const ratings = games
-    .filter(g => g.time_class === 'blitz')
+    .filter(g => g.time_class === timeClass)
     .map(g => {
       if (g.white.username.toLowerCase() === lc) return g.white.rating;
       if (g.black.username.toLowerCase() === lc) return g.black.rating;

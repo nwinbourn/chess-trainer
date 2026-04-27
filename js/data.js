@@ -104,6 +104,13 @@ export function saveMonthlyRatings(r) {
   writeFile(getData(), r);
 }
 
+export function getRatingMode() {
+  return localStorage.getItem('chess_rating_mode') || 'blitz';
+}
+export function saveRatingMode(mode) {
+  localStorage.setItem('chess_rating_mode', mode);
+}
+
 export function getAppName() {
   return localStorage.getItem('chess_app_name') || 'Noah';
 }

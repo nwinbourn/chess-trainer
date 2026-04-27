@@ -1,5 +1,7 @@
-import { getLast5Months } from './data.js';
-import { fetchCurrentBlitzRating, fetchMonthAvgRating } from './chess-api.js';
+import { getLast5Months, getRatingMode } from './data.js';
+import { fetchCurrentRating, fetchMonthAvgRating } from './chess-api.js';
+
+const MODE_LABEL = { blitz: 'Blitz', bullet: 'Bullet', rapid: 'Rapid' };
 
 // ── Internal SVG renderer (pure, synchronous) ────────────────────────────────
 
@@ -106,26 +108,28 @@ export async function renderGraph() {
   rSub.textContent = 'Fetching from Chess.com';
 
   const months = getLast5Months();
+  const timeClass = getRatingMode();
 
   try {
     // Fire current-rating and all monthly fetches in parallel
     const [currentRating, monthlyResults] = await Promise.all([
-      fetchCurrentBlitzRating(),
+      fetchCurrentRating(timeClass),
       Promise.all(
         months.map(m => {
           const [y, mo] = m.key.split('-').map(Number);
-          return fetchMonthAvgRating(y, mo).then(avg => ({ label: m.label, rating: avg }));
+          return fetchMonthAvgRating(y, mo, timeClass).then(avg => ({ label: m.label, rating: avg }));
         })
       ),
     ]);
 
     // Update header display
+    const label = MODE_LABEL[timeClass] || timeClass;
     if (currentRating !== null) {
       rDisplay.textContent = currentRating;
-      rSub.textContent = 'Blitz · Live from Chess.com';
+      rSub.textContent = `${label} · Live from Chess.com`;
     } else {
       rDisplay.textContent = '—';
-      rSub.textContent = 'No blitz rating on Chess.com';
+      rSub.textContent = `No ${label.toLowerCase()} rating on Chess.com`;
     }
 
     // Draw graph with months that have data

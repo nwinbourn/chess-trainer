@@ -170,6 +170,36 @@ body {
 .graph-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
 
 .graph-label { font-family: var(--mono); font-size: 8px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-dim); margin-bottom: 2px; }
+
+.rating-mode-select {
+  appearance: none; -webkit-appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  padding: 0 13px 0 0;
+  margin-bottom: 2px;
+  outline: none;
+  /* Chevron drawn with an inline SVG */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%233a5570'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0 center;
+  background-size: 7px 4px;
+  transition: color 0.15s;
+}
+.rating-mode-select:hover { color: var(--text-muted); }
+.rating-mode-select:focus { color: var(--accent-light); }
+.rating-mode-select option {
+  background: var(--surface2);
+  color: var(--white);
+  font-family: var(--mono);
+  letter-spacing: 0.05em;
+  font-size: 11px;
+}
 .graph-current-rating { font-family: var(--serif); font-size: 28px; color: var(--accent-light); line-height: 1; }
 .graph-current-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
 

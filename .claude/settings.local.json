@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx --version)",
+      "Bash(cp 'C:/Users/noahw/OneDrive/Documents/CSC/VS-Code-Workspace/Chess-Trainer/js/*' C:/Users/noahw/OneDrive/Documents/CSC/VS-Code-Workspace/Chess-Trainer/.claude/worktrees/confident-lehmann-278011/js/)",
+      "Bash(mkdir -p C:/Users/noahw/OneDrive/Documents/CSC/VS-Code-Workspace/Chess-Trainer/.claude/worktrees/confident-lehmann-278011/.claude)",
+      "Bash(cp C:/Users/noahw/OneDrive/Documents/CSC/VS-Code-Workspace/Chess-Trainer/.claude/launch.json C:/Users/noahw/OneDrive/Documents/CSC/VS-Code-Workspace/Chess-Trainer/.claude/worktrees/confident-lehmann-278011/.claude/launch.json)",
+      "Bash(git rm *)",
+      "Bash(git add *)"
+    ]
+  }
+}

@@ -72,8 +72,10 @@ export function renderChecklist(ds, dow, dd) {
 // ── TASK MANAGER ─────────────────────────────────────────────────────────────
 
 let editingTaskId = null;   // null = adding new, string = editing existing
+let activeTMDay   = 0;      // 0–6, which day tab is selected in the task manager
 
 export function openTaskManager() {
+  activeTMDay = state.selectedDate.getDay();   // open on the currently viewed day
   document.getElementById('checklist-view').hidden = true;
   const mgr = document.getElementById('task-manager');
   mgr.hidden = false;
@@ -92,8 +94,18 @@ function closeTaskManager(reRender = true) {
 }
 
 function renderManager() {
-  const tasks = getTasks();
-  const mgr   = document.getElementById('task-manager');
+  const allTasks   = getTasks();
+  const dayTasks   = allTasks.filter(t => t.days.includes(activeTMDay));
+  const dayName    = DAY_NAMES[activeTMDay];
+  const mgr        = document.getElementById('task-manager');
+
+  const tabsHTML = DAY_ABBR.map((abbr, i) =>
+    `<button class="tm-day-tab${i === activeTMDay ? ' active' : ''}" data-day="${i}">${abbr}</button>`
+  ).join('');
+
+  const listHTML = dayTasks.length
+    ? dayTasks.map(t => taskRowHTML(t)).join('')
+    : `<div class="tm-empty">No tasks for ${dayName} — click Add Task to create one</div>`;
 
   mgr.innerHTML = `
     <div class="tm-header">
@@ -101,16 +113,24 @@ function renderManager() {
       <button id="tm-done-btn" class="tm-done-btn">← Done</button>
     </div>
 
+    <div class="tm-day-tabs">${tabsHTML}</div>
+
     <div id="tm-form-area"></div>
 
-    <div id="tm-task-list" class="tm-task-list">
-      ${tasks.length ? tasks.map(t => taskRowHTML(t)).join('') : '<div class="tm-empty">No tasks yet — click Add Task below</div>'}
-    </div>
+    <div id="tm-task-list" class="tm-task-list">${listHTML}</div>
 
-    <button id="tm-add-btn" class="tm-add-btn">+ Add Task</button>`;
+    <button id="tm-add-btn" class="tm-add-btn">+ Add Task for ${dayName}</button>`;
 
   mgr.querySelector('#tm-done-btn').addEventListener('click', () => closeTaskManager(true));
   mgr.querySelector('#tm-add-btn').addEventListener('click', () => openForm(null));
+
+  // Day tab switching
+  mgr.querySelectorAll('.tm-day-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeTMDay = Number(btn.dataset.day);
+      renderManager();
+    });
+  });
 
   // Edit / delete buttons via delegation
   mgr.querySelector('#tm-task-list').addEventListener('click', e => {
@@ -132,16 +152,15 @@ function renderManager() {
 }
 
 function taskRowHTML(t) {
-  const dayBadges = DAY_ABBR
-    .map((abbr, i) => t.days.includes(i)
-      ? `<span class="tm-day-badge active">${abbr}</span>`
-      : `<span class="tm-day-badge">${abbr}</span>`)
-    .join('');
+  // Show which other days this task also appears on (compact, secondary info)
+  const otherDays = t.days.filter(d => d !== activeTMDay);
+  const alsoOn = otherDays.length
+    ? `<span class="tm-row-also">also: ${otherDays.map(d => DAY_ABBR[d]).join(' ')}</span>`
+    : '';
   return `
     <div class="tm-task-row" data-id="${escHtml(t.id)}">
-      <div class="tm-row-days">${dayBadges}</div>
       <div class="tm-row-text">
-        <div class="tm-row-title">${escHtml(t.text)}</div>
+        <div class="tm-row-title">${escHtml(t.text)}${alsoOn}</div>
         ${t.note ? `<div class="tm-row-note">${escHtml(t.note)}</div>` : ''}
       </div>
       <div class="tm-row-actions">
@@ -152,9 +171,9 @@ function taskRowHTML(t) {
 }
 
 function openForm(task) {
-  // task = null means "add new"
+  // task = null means "add new" — pre-select the active tab day
   editingTaskId = task ? task.id : null;
-  const selectedDays = task ? task.days : [];
+  const selectedDays = task ? task.days : [activeTMDay];
 
   const formArea = document.getElementById('tm-form-area');
   formArea.innerHTML = `

@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Serve (npx serve)",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", ".", "--listen", "5500", "--no-clipboard"],
+      "port": 5500
+    },
+    {
+      "name": "http-server (npx http-server)",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["http-server", ".", "-p", "8080", "--cors"],
+      "port": 8080
+    }
+  ]
+}

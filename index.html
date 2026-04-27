@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>♞ Noah's Chess Trainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="app-logo">
+      <span class="knight-icon">♞</span>
+      <div>
+        <div class="app-name">Noah</div>
+        <div class="app-sub">Chess Tracker</div>
+      </div>
+    </div>
+    <div id="file-bar">
+      <div class="file-dot disconnected" id="file-dot"></div>
+      <span id="file-label">No save file</span>
+      <div id="file-actions">
+        <button id="file-new-btn">New</button>
+        <button id="file-open-btn">Open</button>
+        <button id="file-reconnect-btn" hidden>Reconnect</button>
+      </div>
+    </div>
+
+    <div id="calendar-widget">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="prev-month">‹</button>
+        <span class="cal-title" id="cal-title"></span>
+        <button class="cal-nav-btn" id="next-month">›</button>
+      </div>
+      <div class="cal-weekdays">
+        <div class="cal-weekday">S</div><div class="cal-weekday">M</div>
+        <div class="cal-weekday">T</div><div class="cal-weekday">W</div>
+        <div class="cal-weekday">T</div><div class="cal-weekday">F</div>
+        <div class="cal-weekday">S</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <button class="today-btn" id="today-btn">↩ Jump to Today</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main id="main-content">
+
+    <!-- GRAPH -->
+    <div id="graph-panel">
+      <div class="graph-top">
+        <div>
+          <div class="graph-label">Blitz Rating</div>
+          <div class="graph-current-rating" id="graph-current-rating">…</div>
+          <div class="graph-current-sub" id="graph-current-sub">Fetching from Chess.com</div>
+        </div>
+      </div>
+
+      <div id="graph-container">
+        <svg id="rating-graph" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#5b8fa8" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="#5b8fa8" stop-opacity="0.0"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    </div>
+
+    <!-- WORKSPACE -->
+    <div id="workspace">
+      <div class="workspace-header">
+        <div>
+          <div class="selected-day-label" id="selected-day-label"></div>
+          <div class="selected-day-sub" id="selected-day-sub"></div>
+        </div>
+        <div class="tab-bar">
+          <button class="tab-btn active" data-tab="checklist">♟ Checklist</button>
+          <button class="tab-btn" data-tab="reviews">♜ Game Reviews</button>
+        </div>
+      </div>
+
+      <!-- CHECKLIST TAB -->
+      <div id="tab-checklist" class="tab-content active">
+        <div class="completion-row">
+          <span>Daily Progress</span>
+          <span id="completion-count">0 / 0</span>
+        </div>
+        <div class="completion-bar">
+          <div class="completion-fill" id="completion-fill" style="width:0%"></div>
+        </div>
+        <div id="task-list"></div>
+        <div>
+          <div class="notes-label">♟ Daily Notes</div>
+          <textarea class="notes-textarea" id="daily-notes" placeholder="Thoughts, patterns noticed, what clicked today, goals for tomorrow..."></textarea>
+        </div>
+      </div>
+
+      <!-- REVIEWS TAB -->
+      <div id="tab-reviews" class="tab-content">
+        <div class="reviews-top">
+          <div class="reviews-count" id="reviews-count">0 Reviews</div>
+          <button class="add-review-btn" id="add-review-btn">+ Add Game Review</button>
+        </div>
+        <div id="reviews-list"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

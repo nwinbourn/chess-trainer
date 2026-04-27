@@ -92,18 +92,29 @@
 
       <!-- CHECKLIST TAB -->
       <div id="tab-checklist" class="tab-content active">
-        <div class="completion-row">
-          <span>Daily Progress</span>
-          <span id="completion-count">0 / 0</span>
+
+        <!-- Normal checklist view -->
+        <div id="checklist-view">
+          <div class="completion-row">
+            <span>Daily Progress</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <button class="edit-tasks-btn" id="edit-tasks-btn">⚙ Edit Tasks</button>
+              <span id="completion-count">0 / 0</span>
+            </div>
+          </div>
+          <div class="completion-bar">
+            <div class="completion-fill" id="completion-fill" style="width:0%"></div>
+          </div>
+          <div id="task-list"></div>
+          <div>
+            <div class="notes-label">♟ Daily Notes</div>
+            <textarea class="notes-textarea" id="daily-notes" placeholder="Thoughts, patterns noticed, what clicked today, goals for tomorrow..."></textarea>
+          </div>
         </div>
-        <div class="completion-bar">
-          <div class="completion-fill" id="completion-fill" style="width:0%"></div>
-        </div>
-        <div id="task-list"></div>
-        <div>
-          <div class="notes-label">♟ Daily Notes</div>
-          <textarea class="notes-textarea" id="daily-notes" placeholder="Thoughts, patterns noticed, what clicked today, goals for tomorrow..."></textarea>
-        </div>
+
+        <!-- Task manager (shown when editing tasks) -->
+        <div id="task-manager" hidden></div>
+
       </div>
 
       <!-- REVIEWS TAB -->

@@ -1,10 +1,10 @@
 import { state, today, toDateStr, getDayData, saveDayData, getData, getMonthlyRatings,
          getAppName, saveAppName, getChessUsername, saveChessUsername,
-         getRatingMode, saveRatingMode } from './data.js';
+         getRatingMode, saveRatingMode, getTasks } from './data.js';
 import { clearApiCache } from './chess-api.js';
 import { renderCalendar } from './calendar.js';
 import { renderGraph } from './graph.js';
-import { renderWorkspace, renderChecklist, renderReviews } from './workspace.js';
+import { renderWorkspace, renderChecklist, renderReviews, openTaskManager } from './workspace.js';
 import { initStorage, reconnect, createNewFile, openExistingFile, readFile, getFileName, writeFile } from './storage.js';
 
 // ── LOGO: editable name + Chess.com username ──
@@ -82,6 +82,12 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     state.activeTab = btn.dataset.tab;
     document.getElementById(`tab-${state.activeTab}`).classList.add('active');
   });
+});
+
+// ── EDIT TASKS ──
+
+document.getElementById('edit-tasks-btn').addEventListener('click', () => {
+  openTaskManager();
 });
 
 // ── TASKS (event delegation — items have data-task-id and data-ds set by renderChecklist) ──
@@ -184,7 +190,7 @@ function updateFileBar(status) {
 document.getElementById('file-new-btn').addEventListener('click', async () => {
   const ok = await createNewFile();
   if (!ok) return;
-  await writeFile(getData(), getMonthlyRatings());
+  await writeFile(getData(), getMonthlyRatings(), getTasks());
   updateFileBar('connected');
 });
 
@@ -193,8 +199,9 @@ document.getElementById('file-open-btn').addEventListener('click', async () => {
   if (!ok) return;
   const fileData = await readFile();
   if (fileData) {
-    if (fileData.days) localStorage.setItem('chess_tracker_v2', JSON.stringify(fileData.days));
+    if (fileData.days)    localStorage.setItem('chess_tracker_v2', JSON.stringify(fileData.days));
     if (fileData.ratings) localStorage.setItem('chess_monthly_ratings', JSON.stringify(fileData.ratings));
+    if (fileData.tasks)   localStorage.setItem('chess_tasks', JSON.stringify(fileData.tasks));
     renderCalendar();
     renderWorkspace();
     renderGraph();
@@ -223,11 +230,12 @@ async function init() {
   if (status === 'connected') {
     const fileData = await readFile();
     if (fileData) {
-      if (fileData.days) localStorage.setItem('chess_tracker_v2', JSON.stringify(fileData.days));
+      if (fileData.days)    localStorage.setItem('chess_tracker_v2', JSON.stringify(fileData.days));
       if (fileData.ratings) localStorage.setItem('chess_monthly_ratings', JSON.stringify(fileData.ratings));
+      if (fileData.tasks)   localStorage.setItem('chess_tasks', JSON.stringify(fileData.tasks));
     } else {
       // File exists but is empty — write current localStorage data into it
-      writeFile(getData(), getMonthlyRatings());
+      writeFile(getData(), getMonthlyRatings(), getTasks());
     }
   }
 

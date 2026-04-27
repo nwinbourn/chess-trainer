@@ -1,4 +1,4 @@
-import { state, today, toDateStr, getData, WEEKLY_TASKS, MONTH_NAMES } from './data.js';
+import { state, today, toDateStr, getData, getTasksForDay, MONTH_NAMES } from './data.js';
 
 export function renderCalendar() {
   document.getElementById('cal-title').textContent = `${MONTH_NAMES[state.calMonth]} ${state.calYear}`;
@@ -21,7 +21,7 @@ export function renderCalendar() {
     const ds = toDateStr(date);
     const dow = date.getDay();
     const dayData = allData[ds] || { tasks: {}, notes: '', reviews: [] };
-    const tasks = WEEKLY_TASKS[dow] || [];
+    const tasks = getTasksForDay(dow);
 
     const cell = document.createElement('div');
     cell.className = 'cal-day';

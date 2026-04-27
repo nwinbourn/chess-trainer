@@ -344,6 +344,104 @@ body {
 
 .no-reviews { text-align: center; padding: 36px; font-family: var(--mono); font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; line-height: 2; }
 
+/* ── TASK MANAGER ── */
+.edit-tasks-btn {
+  background: none; border: 1px solid var(--border); color: var(--text-dim);
+  font-family: var(--mono); font-size: 8px; text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 3px 8px; border-radius: 3px; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.edit-tasks-btn:hover { border-color: var(--accent); color: var(--accent-light); }
+
+#task-manager { display: flex; flex-direction: column; gap: 0; height: 100%; }
+
+.tm-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 0 12px; margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.tm-title { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); }
+.tm-done-btn {
+  background: none; border: 1px solid var(--border); color: var(--text-muted);
+  font-family: var(--mono); font-size: 8px; text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 4px 10px; border-radius: 3px; cursor: pointer; transition: all 0.15s;
+}
+.tm-done-btn:hover { border-color: var(--accent); color: var(--accent-light); }
+
+/* Task rows in the manager */
+.tm-task-list { display: flex; flex-direction: column; gap: 3px; overflow-y: auto; flex: 1; padding-bottom: 4px; }
+.tm-task-row {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+}
+.tm-row-days { display: flex; gap: 2px; flex-shrink: 0; }
+.tm-day-badge {
+  font-family: var(--mono); font-size: 7px; text-transform: uppercase; letter-spacing: 0.04em;
+  padding: 2px 4px; border-radius: 2px;
+  background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border);
+}
+.tm-day-badge.active { background: var(--accent-dim); color: var(--accent-light); border-color: var(--accent); }
+.tm-row-text { flex: 1; min-width: 0; }
+.tm-row-title { font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tm-row-note  { font-size: 10px; color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tm-row-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.tm-edit-btn, .tm-delete-btn {
+  background: none; border: 1px solid var(--border); color: var(--text-dim);
+  font-size: 10px; width: 22px; height: 22px; border-radius: 3px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+}
+.tm-edit-btn:hover   { border-color: var(--accent); color: var(--accent-light); }
+.tm-delete-btn:hover { border-color: #7a3a3a; color: #c07070; }
+
+.tm-empty {
+  font-family: var(--mono); font-size: 9px; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.08em; padding: 16px 0;
+}
+
+.tm-add-btn {
+  margin-top: 10px; width: 100%;
+  background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent-light);
+  font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 7px; border-radius: 3px; cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+}
+.tm-add-btn:hover { background: rgba(91,143,168,0.2); }
+
+/* Add / Edit form */
+.tm-form {
+  background: var(--surface2); border: 1px solid var(--border2); border-radius: 4px;
+  padding: 12px 14px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px;
+}
+.tm-form-field { display: flex; flex-direction: column; gap: 5px; }
+.tm-form-label { font-family: var(--mono); font-size: 8px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
+.tm-form-input {
+  background: var(--surface); border: 1px solid var(--border); color: var(--white);
+  font-family: var(--sans); font-size: 12px; padding: 6px 9px; border-radius: 3px;
+  outline: none; transition: border-color 0.15s; width: 100%;
+}
+.tm-form-input:focus { border-color: var(--accent); }
+.tm-form-input::placeholder { color: var(--text-dim); }
+
+.tm-day-toggles { display: flex; gap: 4px; flex-wrap: wrap; }
+.tm-day-btn {
+  font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 4px 7px; border-radius: 3px; cursor: pointer; transition: all 0.12s;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
+}
+.tm-day-btn.on { background: var(--accent-dim); border-color: var(--accent); color: var(--accent-light); }
+
+.tm-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.tm-cancel-btn {
+  background: none; border: 1px solid var(--border); color: var(--text-muted);
+  font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em;
+  padding: 5px 12px; border-radius: 3px; cursor: pointer; transition: all 0.15s;
+}
+.tm-cancel-btn:hover { border-color: var(--border2); color: var(--text); }
+.tm-save-btn {
+  background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent-light);
+  font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em;
+  padding: 5px 14px; border-radius: 3px; cursor: pointer; transition: all 0.15s;
+}
+.tm-save-btn:hover { background: rgba(91,143,168,0.2); }
+
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

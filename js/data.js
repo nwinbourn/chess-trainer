@@ -80,7 +80,7 @@ export function getData() {
 
 export function saveData(data) {
   localStorage.setItem('chess_tracker_v2', JSON.stringify(data));
-  writeFile(data, getMonthlyRatings());
+  writeFile(data, getMonthlyRatings(), getTasks());
 }
 
 export function getDayData(ds) {
@@ -101,7 +101,47 @@ export function getMonthlyRatings() {
 
 export function saveMonthlyRatings(r) {
   localStorage.setItem('chess_monthly_ratings', JSON.stringify(r));
-  writeFile(getData(), r);
+  writeFile(getData(), r, getTasks());
+}
+
+// ── TASK DEFINITIONS ─────────────────────────────────────────────────────────
+
+function migrateStaticTasks() {
+  // Convert the hardcoded WEEKLY_TASKS into the new flat format, preserving
+  // all existing IDs so that per-day completion data is not lost.
+  const tasks = [];
+  const seen = new Map();
+  for (const [dowStr, dayTasks] of Object.entries(WEEKLY_TASKS)) {
+    const dow = Number(dowStr);
+    for (const t of dayTasks) {
+      if (seen.has(t.id)) {
+        seen.get(t.id).days.push(dow);
+      } else {
+        const entry = { id: t.id, text: t.text, note: t.note || '', days: [dow] };
+        seen.set(t.id, entry);
+        tasks.push(entry);
+      }
+    }
+  }
+  try { localStorage.setItem('chess_tasks', JSON.stringify(tasks)); } catch {}
+  return tasks;
+}
+
+export function getTasks() {
+  try {
+    const raw = localStorage.getItem('chess_tasks');
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return migrateStaticTasks();
+}
+
+export function saveTasks(tasks) {
+  localStorage.setItem('chess_tasks', JSON.stringify(tasks));
+  writeFile(getData(), getMonthlyRatings(), tasks);
+}
+
+export function getTasksForDay(dow) {
+  return getTasks().filter(t => t.days.includes(dow));
 }
 
 export function getRatingMode() {

@@ -1,10 +1,12 @@
-import { getLast5Months, getRatingMode, getChessUsername } from './data.js';
-import { fetchCurrentRating, fetchMonthAvgRating } from './chess-api.js';
+import { getLastNMonths, getRatingMode, getChessUsername } from './data.js';
+import { fetchCurrentRating, fetchWeeklyRatings } from './chess-api.js';
 
 const MODE_LABEL = { blitz: 'Blitz', bullet: 'Bullet', rapid: 'Rapid' };
+const MONTH_SHORT_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // ── Internal SVG renderer (pure, synchronous) ────────────────────────────────
 
+// entries: Array<{ weekStart: Date, rating: number }>, sorted chronologically
 function drawGraph(entries) {
   const svg = document.getElementById('rating-graph');
   const container = document.getElementById('graph-container');
@@ -16,7 +18,7 @@ function drawGraph(entries) {
     </linearGradient></defs>
     <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle"
       font-family="JetBrains Mono,monospace" font-size="10" fill="#3a5570">
-      ${entries.length === 0 ? 'No blitz games found in the last 5 months' : 'Need at least 2 months of data to draw graph'}
+      ${entries.length === 0 ? 'No games found in the last 3 months' : 'Need at least 2 weeks of data to draw graph'}
     </text>`;
     return;
   }
@@ -33,8 +35,8 @@ function drawGraph(entries) {
   const pts = entries.map((e, i) => ({
     x: pL + (i / (entries.length - 1)) * pW,
     y: pT + (1 - (e.rating - minR) / (maxR - minR)) * pH,
-    rating: e.rating,
-    label: e.label,
+    rating:    e.rating,
+    weekStart: e.weekStart,
   }));
 
   function curvePath(points) {
@@ -65,18 +67,17 @@ function drawGraph(entries) {
     yLabels += `<text x="${pL - 5}" y="${y.toFixed(0)}" text-anchor="end" dominant-baseline="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#3a5570">${val}</text>`;
   }
 
+  // Month tick marks: draw a tick + label only at the first weekly point of each new month
   let xLabels = '';
   pts.forEach((p, i) => {
-    const anchor = i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle';
-    xLabels += `<text x="${p.x.toFixed(0)}" y="${H - 3}" text-anchor="${anchor}" dominant-baseline="auto" font-family="JetBrains Mono,monospace" font-size="9" fill="#3a5570">${entries[i].label}</text>`;
+    const prevMonth = i > 0 ? entries[i - 1].weekStart.getUTCMonth() : -1;
+    const thisMonth = entries[i].weekStart.getUTCMonth();
+    if (i === 0 || thisMonth !== prevMonth) {
+      const anchor = i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle';
+      xLabels += `<line x1="${p.x.toFixed(1)}" y1="${(pT + pH).toFixed(1)}" x2="${p.x.toFixed(1)}" y2="${(pT + pH + 4).toFixed(1)}" stroke="#3a5570" stroke-width="1"/>`;
+      xLabels += `<text x="${p.x.toFixed(0)}" y="${H - 3}" text-anchor="${anchor}" dominant-baseline="auto" font-family="JetBrains Mono,monospace" font-size="9" fill="#3a5570">${MONTH_SHORT_LABELS[thisMonth]}</text>`;
+    }
   });
-
-  const dots = pts.map((p, i) => {
-    const anchor = i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle';
-    const labelY = p.y - 8;
-    return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="#7aafc8"/>
-    <text x="${p.x.toFixed(0)}" y="${labelY.toFixed(0)}" text-anchor="${anchor}" font-family="JetBrains Mono,monospace" font-size="8" fill="#7aafc8">${p.rating}</text>`;
-  }).join('');
 
   svg.innerHTML = `
     <defs>
@@ -88,7 +89,6 @@ function drawGraph(entries) {
     ${gridLines}
     <path d="${areaPath}" fill="url(#areaGrad)"/>
     <path d="${linePath}" fill="none" stroke="#5b8fa8" stroke-width="1.5" stroke-linejoin="round"/>
-    ${dots}
     ${yLabels}
     ${xLabels}`;
 
@@ -107,19 +107,14 @@ export async function renderGraph() {
   rDisplay.textContent = '…';
   rSub.textContent = 'Fetching from Chess.com';
 
-  const months = getLast5Months();
+  const months = getLastNMonths(3);
   const timeClass = getRatingMode();
 
   try {
-    // Fire current-rating and all monthly fetches in parallel
-    const [currentRating, monthlyResults] = await Promise.all([
+    // Fire current-rating and weekly fetch in parallel
+    const [currentRating, weeklyEntries] = await Promise.all([
       fetchCurrentRating(timeClass),
-      Promise.all(
-        months.map(m => {
-          const [y, mo] = m.key.split('-').map(Number);
-          return fetchMonthAvgRating(y, mo, timeClass).then(avg => ({ label: m.label, rating: avg }));
-        })
-      ),
+      fetchWeeklyRatings(months, timeClass),
     ]);
 
     // Update header display
@@ -134,9 +129,7 @@ export async function renderGraph() {
         : 'Enter your Chess.com username in the sidebar';
     }
 
-    // Draw graph with months that have data
-    const entries = monthlyResults.filter(m => m.rating !== null);
-    drawGraph(entries);
+    drawGraph(weeklyEntries);
 
   } catch (err) {
     console.error('Chess.com API error:', err);

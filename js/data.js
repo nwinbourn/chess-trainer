@@ -62,11 +62,16 @@ export function toMonthKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
 
-export function getLast5Months() {
+export function getLastNMonths(n = 5) {
   const months = [];
-  for (let i = 4; i >= 0; i--) {
+  for (let i = n - 1; i >= 0; i--) {
     const t = new Date(today.getFullYear(), today.getMonth() - i, 1);
-    months.push({ key: toMonthKey(t), label: `${MONTH_SHORT[t.getMonth()]} ${t.getFullYear()}` });
+    months.push({
+      key:   toMonthKey(t),
+      year:  t.getFullYear(),
+      month: t.getMonth() + 1,   // 1-indexed
+      label: `${MONTH_SHORT[t.getMonth()]} ${t.getFullYear()}`,
+    });
   }
   return months;
 }

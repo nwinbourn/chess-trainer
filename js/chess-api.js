@@ -59,6 +59,74 @@ export async function fetchCurrentRating(timeClass = 'blitz') {
 }
 
 /**
+ * Returns raw per-game data for the given month: [{ endTime, rating }].
+ * Filters by time class. Returns [] if no archive or no matching games.
+ * Cached 1 hour for the current month, 24 hours for past months.
+ */
+async function fetchMonthGames(year, month, timeClass) {
+  const username = getUsername();
+  if (!username) return [];
+
+  const monthStr = String(month).padStart(2, '0');
+  const KEY = `chess_api_games_${year}-${monthStr}_${timeClass}`;
+
+  const now = new Date();
+  const isCurrent = year === now.getFullYear() && month === now.getMonth() + 1;
+  const TTL = isCurrent ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+
+  const cached = cacheGet(KEY, TTL);
+  if (cached !== undefined) return cached;
+
+  const res = await fetch(`${BASE}/${username}/games/${year}/${monthStr}`);
+  if (res.status === 404) { cacheSet(KEY, []); return []; }
+  if (!res.ok) throw new Error(`Games fetch failed: ${res.status}`);
+
+  const data = await res.json();
+  const lc = username.toLowerCase();
+  const games = (data.games ?? [])
+    .filter(g => g.time_class === timeClass)
+    .map(g => {
+      const rating = g.white.username.toLowerCase() === lc ? g.white.rating
+                   : g.black.username.toLowerCase() === lc ? g.black.rating
+                   : null;
+      return rating !== null ? { endTime: g.end_time, rating } : null;
+    })
+    .filter(Boolean);
+
+  cacheSet(KEY, games);
+  return games;
+}
+
+/**
+ * Returns weekly average ratings over the given months.
+ * months: Array<{ year: number, month: number }>
+ * Returns: Array<{ weekStart: Date, rating: number }>, sorted chronologically.
+ * Only weeks with at least one game are included.
+ */
+export async function fetchWeeklyRatings(months, timeClass = 'blitz') {
+  const perMonth = await Promise.all(
+    months.map(({ year, month }) => fetchMonthGames(year, month, timeClass))
+  );
+  const allGames = perMonth.flat();
+  if (allGames.length === 0) return [];
+
+  const WEEK_SECS = 7 * 24 * 60 * 60;
+  const buckets = new Map();
+  for (const { endTime, rating } of allGames) {
+    const weekIndex = Math.floor(endTime / WEEK_SECS);
+    if (!buckets.has(weekIndex)) buckets.set(weekIndex, []);
+    buckets.get(weekIndex).push(rating);
+  }
+
+  return Array.from(buckets.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([weekIndex, ratings]) => ({
+      weekStart: new Date(weekIndex * WEEK_SECS * 1000),
+      rating: Math.round(ratings.reduce((a, b) => a + b, 0) / ratings.length),
+    }));
+}
+
+/**
  * Returns the average rating for the given time class and year/month (1-indexed),
  * or null if no games were played that month.
  * Cached 1 hour for the current month, 24 hours for past months.

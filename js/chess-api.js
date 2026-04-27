@@ -39,13 +39,16 @@ function cacheSet(key, value) {
  * or null if unavailable. Cached for 5 minutes.
  */
 export async function fetchCurrentRating(timeClass = 'blitz') {
+  const username = getUsername();
+  if (!username) return null;
+
   const KEY = `chess_api_stats_${timeClass}`;
   const TTL = 5 * 60 * 1000;
 
   const cached = cacheGet(KEY, TTL);
   if (cached !== undefined) return cached;
 
-  const res = await fetch(`${BASE}/${getUsername()}/stats`);
+  const res = await fetch(`${BASE}/${username}/stats`);
   if (!res.ok) throw new Error(`Stats fetch failed: ${res.status}`);
   const data = await res.json();
 
@@ -61,6 +64,9 @@ export async function fetchCurrentRating(timeClass = 'blitz') {
  * Cached 1 hour for the current month, 24 hours for past months.
  */
 export async function fetchMonthAvgRating(year, month, timeClass = 'blitz') {
+  const username = getUsername();
+  if (!username) return null;
+
   const monthStr = String(month).padStart(2, '0');
   const KEY = `chess_api_month_${year}-${monthStr}_${timeClass}`;
 
@@ -70,8 +76,6 @@ export async function fetchMonthAvgRating(year, month, timeClass = 'blitz') {
 
   const cached = cacheGet(KEY, TTL);
   if (cached !== undefined) return cached;
-
-  const username = getUsername();
   const res = await fetch(`${BASE}/${username}/games/${year}/${monthStr}`);
 
   // 404 = no archive for that month yet

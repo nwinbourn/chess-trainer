@@ -152,14 +152,14 @@ export function saveRatingMode(mode) {
 }
 
 export function getAppName() {
-  return localStorage.getItem('chess_app_name') || 'Noah';
+  return localStorage.getItem('chess_app_name') ?? '';
 }
 export function saveAppName(name) {
   localStorage.setItem('chess_app_name', name);
 }
 
 export function getChessUsername() {
-  return localStorage.getItem('chess_username') || 'Monkes_Gambit';
+  return localStorage.getItem('chess_username') ?? '';
 }
 export function saveChessUsername(username) {
   localStorage.setItem('chess_username', username);

@@ -85,6 +85,19 @@ body {
 #app-name[contenteditable]:focus,
 #chess-username[contenteditable]:focus { background: var(--surface3); }
 
+/* Placeholder text when fields are empty */
+#app-name[contenteditable]:empty::before {
+  content: '(Enter Title)';
+  color: var(--text-dim);
+  pointer-events: none;
+}
+#chess-username[contenteditable]:empty::before {
+  content: '(Enter Username)';
+  color: var(--text-dim);
+  pointer-events: none;
+  /* .app-sub already has text-transform:uppercase so this renders as (ENTER USERNAME) */
+}
+
 /* File bar */
 #file-bar {
   display: flex; align-items: center; gap: 8px;

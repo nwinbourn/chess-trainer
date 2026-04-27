@@ -19,15 +19,15 @@ function preventNewline(e) {
 
 appNameEl.addEventListener('keydown', preventNewline);
 appNameEl.addEventListener('blur', () => {
-  const val = appNameEl.textContent.trim() || 'Noah';
-  appNameEl.textContent = val;
+  const val = appNameEl.textContent.trim();
+  appNameEl.textContent = val;   // allow empty — CSS shows placeholder
   saveAppName(val);
 });
 
 chessUsernameEl.addEventListener('keydown', preventNewline);
 chessUsernameEl.addEventListener('blur', () => {
-  const val = chessUsernameEl.textContent.trim() || 'Monkes_Gambit';
-  chessUsernameEl.textContent = val;
+  const val = chessUsernameEl.textContent.trim();
+  chessUsernameEl.textContent = val; // allow empty — CSS shows placeholder
   saveChessUsername(val);
   clearApiCache();   // invalidate cached ratings for the old username
   renderGraph();     // re-fetch with new username

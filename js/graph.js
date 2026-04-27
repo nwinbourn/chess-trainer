@@ -1,4 +1,4 @@
-import { getLast5Months, getRatingMode } from './data.js';
+import { getLast5Months, getRatingMode, getChessUsername } from './data.js';
 import { fetchCurrentRating, fetchMonthAvgRating } from './chess-api.js';
 
 const MODE_LABEL = { blitz: 'Blitz', bullet: 'Bullet', rapid: 'Rapid' };
@@ -129,7 +129,9 @@ export async function renderGraph() {
       rSub.textContent = `${label} · Live from Chess.com`;
     } else {
       rDisplay.textContent = '—';
-      rSub.textContent = `No ${label.toLowerCase()} rating on Chess.com`;
+      rSub.textContent = getChessUsername()
+        ? `No ${label.toLowerCase()} rating found on Chess.com`
+        : 'Enter your Chess.com username in the sidebar';
     }
 
     // Draw graph with months that have data

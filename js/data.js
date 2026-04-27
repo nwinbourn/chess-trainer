@@ -1,5 +1,3 @@
-import { writeFile } from './storage.js';
-
 export const WEEKLY_TASKS = {
   0: [
     { id: 'sun_puzzles', text: 'Puzzles (10 min)', note: 'No games today — rest day' },
@@ -80,7 +78,7 @@ export function getData() {
 
 export function saveData(data) {
   localStorage.setItem('chess_tracker_v2', JSON.stringify(data));
-  writeFile(data, getMonthlyRatings(), getTasks());
+  window.dispatchEvent(new CustomEvent('chessdex-save'));
 }
 
 export function getDayData(ds) {
@@ -101,7 +99,7 @@ export function getMonthlyRatings() {
 
 export function saveMonthlyRatings(r) {
   localStorage.setItem('chess_monthly_ratings', JSON.stringify(r));
-  writeFile(getData(), r, getTasks());
+  window.dispatchEvent(new CustomEvent('chessdex-save'));
 }
 
 // ── TASK DEFINITIONS ─────────────────────────────────────────────────────────
@@ -137,7 +135,7 @@ export function getTasks() {
 
 export function saveTasks(tasks) {
   localStorage.setItem('chess_tasks', JSON.stringify(tasks));
-  writeFile(getData(), getMonthlyRatings(), tasks);
+  window.dispatchEvent(new CustomEvent('chessdex-save'));
 }
 
 export function getTasksForDay(dow) {

@@ -88,11 +88,11 @@ export async function readFile() {
   }
 }
 
-export async function writeFile(days, ratings, tasks) {
+export async function writeFile(snapshot) {
   if (!fileHandle) return;
   try {
     const writable = await fileHandle.createWritable();
-    await writable.write(JSON.stringify({ days, ratings, tasks }, null, 2));
+    await writable.write(JSON.stringify(snapshot, null, 2));
     await writable.close();
     window.dispatchEvent(new CustomEvent('file-write-ok'));
   } catch (e) {

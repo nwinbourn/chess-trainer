@@ -352,7 +352,7 @@ body {
 }
 .edit-tasks-btn:hover { border-color: var(--accent); color: var(--accent-light); }
 
-#task-manager { display: flex; flex-direction: column; gap: 0; height: 100%; }
+#task-manager:not([hidden]) { display: flex; flex-direction: column; height: 100%; }
 
 .tm-header {
   display: flex; align-items: center; justify-content: space-between;

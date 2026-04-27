@@ -1,5 +1,18 @@
-const USERNAME = 'Monkes_Gambit';
 const BASE = 'https://api.chess.com/pub/player';
+
+function getUsername() {
+  return localStorage.getItem('chess_username') || 'Monkes_Gambit';
+}
+
+/** Clear all cached API results (call when the username changes). */
+export function clearApiCache() {
+  const remove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('chess_api_')) remove.push(k);
+  }
+  remove.forEach(k => localStorage.removeItem(k));
+}
 
 // ── Cache helpers ────────────────────────────────────────────────────────────
 
@@ -32,7 +45,7 @@ export async function fetchCurrentBlitzRating() {
   const cached = cacheGet(KEY, TTL);
   if (cached !== undefined) return cached;
 
-  const res = await fetch(`${BASE}/${USERNAME}/stats`);
+  const res = await fetch(`${BASE}/${getUsername()}/stats`);
   if (!res.ok) throw new Error(`Stats fetch failed: ${res.status}`);
   const data = await res.json();
 
@@ -57,7 +70,8 @@ export async function fetchMonthAvgRating(year, month) {
   const cached = cacheGet(KEY, TTL);
   if (cached !== undefined) return cached;
 
-  const res = await fetch(`${BASE}/${USERNAME}/games/${year}/${monthStr}`);
+  const username = getUsername();
+  const res = await fetch(`${BASE}/${username}/games/${year}/${monthStr}`);
 
   // 404 = no archive for that month yet
   if (res.status === 404) { cacheSet(KEY, null); return null; }
@@ -65,7 +79,7 @@ export async function fetchMonthAvgRating(year, month) {
 
   const data = await res.json();
   const games = data.games ?? [];
-  const lc = USERNAME.toLowerCase();
+  const lc = username.toLowerCase();
 
   const ratings = games
     .filter(g => g.time_class === 'blitz')

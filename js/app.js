@@ -1,8 +1,35 @@
-import { state, today, toDateStr, getDayData, saveDayData, getData, getMonthlyRatings } from './data.js';
+import { state, today, toDateStr, getDayData, saveDayData, getData, getMonthlyRatings,
+         getAppName, saveAppName, getChessUsername, saveChessUsername } from './data.js';
+import { clearApiCache } from './chess-api.js';
 import { renderCalendar } from './calendar.js';
 import { renderGraph } from './graph.js';
 import { renderWorkspace, renderChecklist, renderReviews } from './workspace.js';
 import { initStorage, reconnect, createNewFile, openExistingFile, readFile, getFileName, writeFile } from './storage.js';
+
+// ── LOGO: editable name + Chess.com username ──
+
+const appNameEl      = document.getElementById('app-name');
+const chessUsernameEl = document.getElementById('chess-username');
+
+function preventNewline(e) {
+  if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+}
+
+appNameEl.addEventListener('keydown', preventNewline);
+appNameEl.addEventListener('blur', () => {
+  const val = appNameEl.textContent.trim() || 'Noah';
+  appNameEl.textContent = val;
+  saveAppName(val);
+});
+
+chessUsernameEl.addEventListener('keydown', preventNewline);
+chessUsernameEl.addEventListener('blur', () => {
+  const val = chessUsernameEl.textContent.trim() || 'Monkes_Gambit';
+  chessUsernameEl.textContent = val;
+  saveChessUsername(val);
+  clearApiCache();   // invalidate cached ratings for the old username
+  renderGraph();     // re-fetch with new username
+});
 
 // ── CALENDAR NAVIGATION ──
 
@@ -196,6 +223,10 @@ async function init() {
       writeFile(getData(), getMonthlyRatings());
     }
   }
+
+  // Populate editable logo fields from storage
+  appNameEl.textContent      = getAppName();
+  chessUsernameEl.textContent = getChessUsername();
 
   renderCalendar();
   renderWorkspace();

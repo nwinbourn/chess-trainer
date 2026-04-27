@@ -66,6 +66,24 @@ body {
 .knight-icon { font-size: 24px; line-height: 1; filter: drop-shadow(0 0 6px rgba(91,143,168,0.5)); }
 .app-name { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--white); letter-spacing: 0.01em; }
 .app-sub { font-family: var(--mono); font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
+.chessdex-label { pointer-events: none; user-select: none; }
+
+/* Editable logo fields */
+#app-name[contenteditable],
+#chess-username[contenteditable] {
+  outline: none;
+  border-radius: 2px;
+  padding: 1px 3px;
+  margin: 0 -3px;
+  cursor: text;
+  transition: background 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+#app-name[contenteditable]:hover,
+#chess-username[contenteditable]:hover { background: var(--surface2); }
+#app-name[contenteditable]:focus,
+#chess-username[contenteditable]:focus { background: var(--surface3); }
 
 /* File bar */
 #file-bar {

@@ -104,6 +104,20 @@ export function saveMonthlyRatings(r) {
   writeFile(getData(), r);
 }
 
+export function getAppName() {
+  return localStorage.getItem('chess_app_name') || 'Noah';
+}
+export function saveAppName(name) {
+  localStorage.setItem('chess_app_name', name);
+}
+
+export function getChessUsername() {
+  return localStorage.getItem('chess_username') || 'Monkes_Gambit';
+}
+export function saveChessUsername(username) {
+  localStorage.setItem('chess_username', username);
+}
+
 export function isDayComplete(ds, dow) {
   const dd = getDayData(ds);
   const tasks = WEEKLY_TASKS[dow] || [];

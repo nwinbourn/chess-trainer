@@ -55,13 +55,15 @@
     <div id="graph-panel">
       <div class="graph-top">
         <div>
-          <select id="rating-mode" class="rating-mode-select">
-            <option value="blitz">Blitz Rating</option>
-            <option value="bullet">Bullet Rating</option>
-            <option value="rapid">Rapid Rating</option>
-          </select>
+          <div class="graph-mode-row">
+            <select id="rating-mode" class="rating-mode-select">
+              <option value="blitz">Blitz Rating</option>
+              <option value="bullet">Bullet Rating</option>
+              <option value="rapid">Rapid Rating</option>
+            </select>
+            <span id="graph-current-sub" class="graph-current-sub">Fetching from Chess.com</span>
+          </div>
           <div class="graph-current-rating" id="graph-current-rating">…</div>
-          <div class="graph-current-sub" id="graph-current-sub">Fetching from Chess.com</div>
         </div>
       </div>
 

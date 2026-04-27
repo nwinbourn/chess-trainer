@@ -1,7 +1,6 @@
 import { getLastNMonths, getRatingMode, getChessUsername } from './data.js';
 import { fetchCurrentRating, fetchWeeklyRatings } from './chess-api.js';
 
-const MODE_LABEL = { blitz: 'Blitz', bullet: 'Bullet', rapid: 'Rapid' };
 const MONTH_SHORT_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // ── Internal SVG renderer (pure, synchronous) ────────────────────────────────
@@ -24,7 +23,7 @@ function drawGraph(entries) {
   }
 
   const W = container.clientWidth || 700;
-  const H = 96;
+  const H = 150;
   const pL = 44, pR = 12, pT = 8, pB = 22;
   const pW = W - pL - pR, pH = H - pT - pB;
 
@@ -118,15 +117,14 @@ export async function renderGraph() {
     ]);
 
     // Update header display
-    const label = MODE_LABEL[timeClass] || timeClass;
     if (currentRating !== null) {
       rDisplay.textContent = currentRating;
-      rSub.textContent = `${label} · Live from Chess.com`;
+      rSub.textContent = 'Live from Chess.com';
     } else {
       rDisplay.textContent = '—';
       rSub.textContent = getChessUsername()
-        ? `No ${label.toLowerCase()} rating found on Chess.com`
-        : 'Enter your Chess.com username in the sidebar';
+        ? 'No rating found on Chess.com'
+        : 'Enter your username in the sidebar';
     }
 
     drawGraph(weeklyEntries);
